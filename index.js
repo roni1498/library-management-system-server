@@ -44,6 +44,14 @@ async function run() {
         res.send(result);
       });
 
+    //   for show book by category
+      app.get("/book/:category", async (req, res) => {
+        const category = req.params.category;
+        const cursor = bookCollection.find({ category: category });
+        const result = await cursor.toArray();
+        res.send(result);
+      });
+
     // get book category data
     app.get('/category', async(req, res)=>{
         const cursor = await bookCategoryCollection.find().toArray();
