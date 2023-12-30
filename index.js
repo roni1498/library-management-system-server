@@ -1,9 +1,10 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken')
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // middleware
 app.use(cors());
@@ -29,6 +30,37 @@ async function run() {
 
     const bookCategoryCollection = client.db("bookCategory").collection("category");
     const bookCollection = client.db("bookDB").collection("Book");
+    const borrowBookCollection = client.db("bookDB").collection("borrowBook");
+
+    // auth related api
+    app.post('/jwt', async(req, res)=>{
+        const user = req.body;
+        console.log('user for token', user)
+    })
+
+
+    // book related api
+
+    // borrow Book
+    app.post('/borrowBook', async(req, res)=>{
+      const borrowBook = req.body;
+      const result = await borrowBookCollection.insertOne(borrowBook);
+      res.send(result);
+    })
+
+    app.get('/borrowBook', async(req, res)=>{
+      const cursor = borrowBookCollection.find();
+      const result = await cursor.toArray()
+      res.send(result);
+    })
+
+    app.delete("/borrowBook/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await borrowBookCollection.deleteOne(query);
+      res.send(result);
+    });
+
 
     // book server
     app.post('/book', async(req, res)=>{
@@ -51,6 +83,34 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result);
       });
+
+    //   for show book details
+    app.get("/single-book/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await bookCollection.findOne(query);
+        res.send(result);
+      });
+
+      app.put("/single-book/:id", async (req, res) =>{
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id)};
+        const options = { upsert: true };
+        const updateBook = req.body
+        const book = {
+          $set: {
+            bookName: updateBook.bookName, 
+            quantity: updateBook.quantity, 
+            authorName: updateBook.authorName, 
+            category: updateBook.category, 
+            description: updateBook.description, 
+            rating: updateBook.rating, 
+            image: updateBook.image
+          }
+        }
+        const result = await bookCollection.updateOne(filter, book, options);
+        res.send(result)
+      })
 
     // get book category data
     app.get('/category', async(req, res)=>{
