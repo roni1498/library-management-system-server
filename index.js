@@ -10,7 +10,10 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // middleware
 app.use(cors({
   origin: [
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://library-management-9dba1.web.app',
+    'https://library-management-9dba1.firebaseapp.com'
   ],
   credentials: true
 }));
@@ -55,7 +58,7 @@ const verifyToken = (req, res, next)=>{
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const bookCategoryCollection = client.db("bookCategory").collection("category");
     const bookCollection = client.db("bookDB").collection("Book");
@@ -164,13 +167,27 @@ async function run() {
         res.send(result)
       })
 
+      app.patch('/single-book/:id', async(req, res)=>{
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id)}
+        const options = { upsert: true };
+        const updateQuantity = req.body;
+        const quantity = {
+          $set: {
+            quantity: updateQuantity.quantity
+          }
+        }
+        const result = await bookCollection.updateOne(filter, quantity, options)
+        res.send(result)
+      })
+
     // get book category data
     app.get('/category', async(req, res)=>{
         const cursor = await bookCategoryCollection.find().toArray();
         res.send(cursor)
     })
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
